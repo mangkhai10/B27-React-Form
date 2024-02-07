@@ -1,62 +1,73 @@
-// SignUpForm.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 
-export default function SignUpForm() {
+export default function SignUpForm({ setToken }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
-    // Form validation logic
-    if (username.length < 8) {
-        setError("Username must be at least 8 characters long.");
-        return;
+    if (formValidation()) {
+      try {
+        const response = await fetch(
+          "https://fsa-jwt-practice.herokuapp.com/signup",
+          {
+            method: "POST",
+            body: JSON.stringify({ username, password }),
+          }
+        );
+        const result = await response.json();
+        setToken(result.token);
+        console.log(result);
+        setSuccessMessage(result.message);
+      } catch (error) {
+        setError(error.message);
       }
+    }
+  }
 
-    try {
-      const response = await fetch("https://fsa-jwt-practice.herokuapp.com/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
+  // Form validation
 
-      const result = await response.json();
-      console.log("API Response: ", result);
-
-      // Assuming the API response has a 'token' property
-      const token = result.token;
-      // Do something with the token, e.g., store it in local storage for future use
-
-    } catch (error) {
-      setError(error.message);
+  function formValidation() {
+    let message = "";
+    if (!username) {
+      message += "Please enter a username. ";
+    } else if (username.length > 8) {
+      message += "Username must be at least 8 characters long. ";
+    }
+    if (message) {
+      setError(message);
+      return false;
+    } else {
+      setError(null);
+      return true;
     }
   }
 
   return (
-    <div>
+    <div className="form-container">
       <h2>Sign Up!</h2>
-      {error && <p>{error}</p>}
+      {error && <p className="error">{error}</p>}
+      {successMessage && <p className="success">{successMessage}</p>}
       <form onSubmit={handleSubmit}>
         <label>
           Username:{" "}
           <input
-            type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
         </label>
-        <label>
+        <label htmlFor="password">
           Password:{" "}
           <input
             type="password"
+            name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
-        <button type="submit">Submit</button>
+        <button>Submit</button>
       </form>
     </div>
   );
